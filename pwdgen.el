@@ -25,8 +25,6 @@
 
 ;; Generate README:
 ;;; Commentary:
-
-;;;; About
 ;; Library for generating secure passwords from within Emacs.  Simple and intuitive; see [[Example]]
 
 ;; Linux, BSD, macOS, and other Unix-like systems only until I can find a way to fetch sufficiently random characters from Emacs for Windows (see [[Built-in pseudo-random number generator]]).
