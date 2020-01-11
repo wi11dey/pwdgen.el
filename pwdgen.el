@@ -47,6 +47,15 @@
 
 ;; See the documentation of the `pwdgen' function for more details.
 
+;;;;; Eshell
+;; If you use the [[https://masteringemacs.org/article/complete-guide-mastering-eshell][amazing]] [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][Eshell]], `pwdgen' acts like other command-line password generators:
+;; #+begin_src sh
+;; ~ $ pwdgen 32 A-Za-z0-9
+;; MYHdBLc9P7l3GPRPMNnj2IoQJVB5T3k9
+;; ~ $ pwdgen 16 "!-~" A-Za-z
+;; /1&]-%(/#"79@#[>
+;; #+end_src
+
 ;;;; Roadmap
 ;;;;; Front-end library
 ;; Front-end interactive commands can be written that use `pwdgen' as a secure backend.  Right now, this is left up to users to match their personal taste.  However, an interface could be written in the future to provide a uniform interface to `pwdgen'.
