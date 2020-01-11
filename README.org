@@ -1,0 +1,30 @@
+#+title: pwdgen.el
+#+author: Will Dey
+/Generate secure passwords without leaving Emacs/
+
+* About
+Library for generating secure passwords from within Emacs.  Simple and intuitive; see [[Example]]
+
+Linux, BSD, macOS, and other Unix-like systems only until I can find a way to fetch sufficiently random characters from Emacs for Windows (see [[Built-in pseudo-random number generator]]).
+
+* Usage
+#+begin_src emacs-lisp
+(pwdgen length with-chars &optional without-chars)
+#+end_src
+Call the ~pwdgen~ function from Lisp or the [[https://masteringemacs.org/article/complete-guide-mastering-eshell][Eshell]] to generate a secure password of ~length~ characters using the characters ~with-chars~, optionally excluding the characters in ~without-chars~.  You can use regex character alternative notation for ~with-chars~ and ~without-chars~.  Like so:
+
+** Example
+#+begin_src emacs-lisp
+(pwdgen 32 "A-Za-z0-9")    ; Generate a 32-character password with only alphanumeric characters
+⇒ "6sud2B3eRTcGWnS8ttOBJaS0YfJyKVWm"
+(pwdgen 16 "!-~" "A-Za-z") ; Generate a 16-character password using all printable ASCII characters EXCEPT letters
+⇒ "!,*#':3_$~8;'0|]"
+#+end_src
+
+See the documentation of the ~pwdgen~ function for more details.
+
+* Roadmap
+** Front-end library
+Front-end interactive commands can be written that use ~pwdgen~ as a secure backend.  Right now, this is left up to users to match their personal taste.  However, an interface could be written in the future to provide a uniform interface to ~pwdgen~.
+** Built-in pseudo-random number generator
+Write an Elisp-only implementation of the [[https://en.wikipedia.org/wiki/Mersenne_twister][Mersenne Twister]] to generate sufficiently random numbers in the absence of /dev/urandom.  This would allow password generation on Emacs for Windows since Windows doesn’t have an analogue for Unix’s /dev/urandom.
