@@ -57,10 +57,12 @@
 ;;;; Roadmap
 ;;;;; Front-end library
 ;; Front-end interactive commands can be written that use `pwdgen' as a secure backend.  Right now, this is left up to users to match their personal taste.  However, an interface could be written in the future to provide a uniform interface to `pwdgen'.
-;;;;; Built-in pseudo-random number generator
-;; Write an Elisp-only implementation of the [[https://en.wikipedia.org/wiki/Mersenne_twister][Mersenne Twister]] to generate sufficiently random numbers in the absence of /dev/urandom.  This would allow password generation on Emacs for Windows since Windows doesn’t have an analogue for Unix’s /dev/urandom.
 
 ;;; Code:
+
+(defgroup pwdgen ()
+  "Generate secure passwords without leaving Emacs."
+  :group 'applications)
 
 (defun pwdgen--delete-regexp (begin end regexp)
   "Delete everything between BEGIN and END in the current buffer matching REGEXP."
@@ -73,6 +75,19 @@
 
 (defconst pwdgen--rng-chunk-size 100
   "How many bytes to read from the random device file at a time.")
+
+(defcustom pwdgen-random-bytes (if (file-readable-p "/dev/urandom")
+				   #'pwdgen-urandom
+				 #'pwdgen-lisp-random)
+  "Which random byte generator to use.")
+
+(defun pwdgen-urandom (n)
+  (call-process-shell-command (format "head -c %d /dev/urandom" n) nil t))
+
+(defun pwdgen-lisp-random (n)
+  (display-warning 'pwdgen "Using less-secure Lisp-based pseudo-random number generator.")
+  (dotimes (i n)
+    (insert (random #xff))))
 
 ;;;###autoload
 (defun pwdgen (length with-chars &optional without-chars)
@@ -104,10 +119,7 @@ printable ASCII characters when used as the value of WITH-CHARS."
   (with-temp-buffer
     (let ((chunk-start (point-min)))
       (while (< (buffer-size) length)
-	(call-process-shell-command (format "head -c %d /dev/urandom"
-					    pwdgen--rng-chunk-size)
-				    nil
-				    t)
+	(funcall pwdgen-random-bytes pwdgen--rng-chunk-size)
 	(pwdgen--delete-regexp chunk-start nil (format "[^%s]"
 						       with-chars))
 	(when without-chars
