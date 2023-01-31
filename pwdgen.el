@@ -54,10 +54,6 @@
 ;; /1&]-%(/#"79@#[>
 ;; #+end_src
 
-;;;; Roadmap
-;;;;; Front-end library
-;; Front-end interactive commands can be written that use `pwdgen' as a secure backend.  Right now, this is left up to users to match their personal taste.  However, an interface could be written in the future to provide a uniform interface to `pwdgen'.
-
 ;;; Code:
 
 (defgroup pwdgen ()
@@ -89,8 +85,13 @@
   (dotimes (i n)
     (insert (random #xff))))
 
+(defvar pwdgen-no-kill nil)
+
+(defvar pwdgen-with-chars-history    nil)
+(defvar pwdgen-without-chars-history nil)
+
 ;;;###autoload
-(defun pwdgen (length with-chars &optional without-chars)
+(defun pwdgen (length with-chars &optional without-chars kill)
   "Generate securely random password of LENGTH characters.
 Allowed characters are specified by WITH-CHARS, which follows
 character alternative format (see Info node `(elisp)Regexp
@@ -110,25 +111,47 @@ same format as WITH-CHARS but lists characters that should be
 excluded from the password.
 
 The generated password will contain the characters WITH-CHARS
-minus WITHOUT-CHARS.  This function will continue to read from the
-system's random source until enough acceptable characters are
+minus WITHOUT-CHARS.  This function will continue to read from
+`pwdgen-random-bytes' until enough acceptable characters are
 gathered.
 
 As an example, the character alternative \"!-~\" will match all
 printable ASCII characters when used as the value of WITH-CHARS."
+  (interactive
+   (list (read-number "Length of generated password: " 32)
+	 (read-string "Allowed characters (default !-~): "
+		      nil ; Initial input.
+		      'pwdgen-with-chars-history
+		      "!-~")
+	 (read-string "Disallowed characters: "
+		      nil ; Initial input.
+		      'pwdgen-without-chars-history)
+	 (not (or executing-kbd-macro
+		  noninteractive
+		  pwdgen-no-kill))))
   (with-temp-buffer
     (let ((chunk-start (point-min)))
       (while (< (buffer-size) length)
 	(funcall pwdgen-random-bytes pwdgen--rng-chunk-size)
-	(pwdgen--delete-regexp chunk-start nil (format "[^%s]"
-						       with-chars))
-	(when without-chars
+	(pwdgen--delete-regexp chunk-start nil (format "[^%s]" with-chars))
+	(when (and without-chars
+		   (not (string-empty-p without-chars)))
 	  (pwdgen--delete-regexp chunk-start nil (if (equal without-chars "^") ; Stop possible infinite loop as [^] would match all characters.
 						     "\\^"
-						   (format "[%s]"
-							   without-chars))))
+						   (format "[%s]" without-chars))))
 	(goto-char (setq chunk-start (point-max)))))
-    (buffer-substring-no-properties 1 (1+ length))))
+    (let ((password (buffer-substring-no-properties 1 (1+ length))))
+      (when kill
+	(kill-new password)
+	(message "Generated password added to kill ring."))
+      password)))
+
+;;;###autoload
+(defun pwdgen-minibuffer ()
+  (interactive)
+  (let ((enable-recursive-minibuffers t)
+	(pwdgen-no-kill t))
+    (insert (call-interactively #'pwdgen))))
 
 (provide 'pwdgen)
 
